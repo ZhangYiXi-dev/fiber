@@ -8,26 +8,42 @@
 #include <vector>
 #include <time.h>
 #include <assert.h>
-//#include "zyx_thread.h"
-//#include "measure_time.h"
+#include "zyx_thread.h"
+#include "measure_time.h"
 #include "common.h"
+#include "log.h"
 #include "fiber.h"
+zyx::Logger::ptr log_main = (new zyx::LoggerManager(zyx::LogLevel::Level::DEBUG, true, true))->Getlogger(); 
 
 void fun_cb()
 {
-    std::cout<<"start fun_cb"<<std::endl;
+    ZYX_LOG_DEBUG(log_main,"start fun_cb");
     zyx::Fiber::ptr f=zyx::Fiber:: GetThis(); //获取当前协程
     f->YieldToHold();//切换回主协程
-    std::cout<<"end fun_cb"<<std::endl;
+    ZYX_LOG_DEBUG(log_main,"end fun_cb");
+}
+void thread_cb(void* arg)
+{
+    zyx::Fiber::GetThis(); //创建主协程，即该上下文
+    zyx::Fiber::ptr f(new zyx::Fiber(fun_cb));//创建子协程
+     ZYX_LOG_DEBUG(log_main,"start main");
+    f->swapIn();//从主协程切换到子协程
+    ZYX_LOG_DEBUG(log_main,"end main");
+    f->swapIn();//从主协程切换到子协程
+    ZYX_LOG_DEBUG(log_main,"end");
+
+     //f->swapIn();//从主协程切换到子协程
 }
 int main()
 {
-    std::cout<<"start main"<<std::endl;
-    zyx::Fiber::GetThis(); //创建主协程，即该上下文
-    zyx::Fiber::ptr f(new zyx::Fiber(fun_cb));//创建子协程
-    f->swapIn();//从主协程切换到子协程
-    std::cout<<"end main"<<std::endl;
-    f->swapIn();//从主协程切换到子协程
-    std::cout<<"end"<<std::endl; 
-     f->swapIn();//从主协程切换到子协程
+    std::vector<zyx::Thread::ptr> thr;
+    for(int i=0;i<20;i++)
+    {
+        zyx::Thread::ptr t(new zyx::Thread(thread_cb,"thread"+std::to_string(i)));
+        thr.push_back(t);
+    }
+    for(auto th:thr)
+    {
+        th->join();
+    }
 }

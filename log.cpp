@@ -14,6 +14,7 @@ namespace zyx
         this->m_fiberId = m_fiberId;
         this->m_time = m_time;
         this->m_threadName = m_threadName;
+        //this->m_FiberName=m_FiberName;
         m_logger = logger;
         m_level = level;
     }
@@ -192,6 +193,12 @@ namespace zyx
             os << event->getThreadName();
         }
     };
+    // class FiberNameFormatItem : public LogFormatter::FormatItem {
+    // public:
+    //     void format(std::ostream& os, Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) override {
+    //         os << event->getFiberName();
+    //     }
+    // };
 
     class DateTimeFormatItem : public LogFormatter::FormatItem 
     {
@@ -277,6 +284,7 @@ namespace zyx
                                                 {'f',FormatItem::ptr(new FilenameFormatItem)},
                                                 {'l',FormatItem::ptr(new  LineFormatItem)},
                                                 {'N',FormatItem::ptr(new ThreadNameFormatItem)},
+                                               // {'B',FormatItem::ptr(new FiberNameFormatItem)},
                                                 {'T',FormatItem::ptr(new TabFormatItem)},
                                                 {'F',FormatItem::ptr(new FiberIdFormatItem)},
                                                 {'D',FormatItem::ptr(new DateTimeFormatItem)} };

@@ -102,7 +102,7 @@ namespace zyx
 
     private:
         //协程id
-        uint64_t m_id;
+        uint64_t m_id=0;
         //运行时栈大小
         uint32_t m_stacksize=0;
         // 协程运行栈指针

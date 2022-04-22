@@ -14,7 +14,8 @@
 #include <map>
 #include<time.h>
 #include "mutex.h"
-
+#include "zyx_thread.h"
+#include "fiber.h"
 /**
  * @brief 使用流式方式将日志级别debug的日志写入到logger
  */
@@ -22,7 +23,7 @@
         {\
         zyx::LogEvent::ptr eptr(new zyx::LogEvent(logger, level, \
                         __FILE__, __LINE__, 0, syscall(SYS_gettid),\
-                0, time(0), "root"));\
+                zyx::Fiber::GetThis()->getId(), time(0), zyx::Thread::GetThis()->GetName()));\
                 eptr->getSS()<<str;\
                 logger->debug(eptr) ;}
         
@@ -36,7 +37,7 @@
         {\
         zyx::LogEvent::ptr eptr(new zyx::LogEvent(logger, level, \
                         __FILE__, __LINE__, 0, syscall(SYS_gettid),\
-                0, time(0), "root"));\
+                zyx::Fiber::GetThis()->getId(), time(0), zyx::Thread::GetThis()->GetName()));\
                 eptr->getSS()<<str;\
                 logger->info(eptr);}
         
@@ -48,9 +49,9 @@
   */
 #define ZYX_LOG_LEVEL_WARN(logger, level,str) \
         {\
-        zyx::LogEvent::ptr eptr(new zyx::LogEvent(logger, level, \
-                        __FILE__, __LINE__, 0, 0,\
-                0, time(0), "root"));\
+       zyx::LogEvent::ptr eptr(new zyx::LogEvent(logger, level, \
+                        __FILE__, __LINE__, 0, syscall(SYS_gettid),\
+                zyx::Fiber::GetThis()->getId(), time(0), zyx::Thread::GetThis()->GetName()));\
                 eptr->getSS()<<str;\
                 logger->warn(eptr);}  
 
@@ -62,8 +63,8 @@
 #define ZYX_LOG_LEVEL_ERROR(logger, level,str) \
         {\
         zyx::LogEvent::ptr eptr(new zyx::LogEvent(logger, level, \
-                        __FILE__, __LINE__, 0, 0,\
-                0, time(0), "root"));\
+                        __FILE__, __LINE__, 0, syscall(SYS_gettid),\
+                zyx::Fiber::GetThis()->getId(), time(0), zyx::Thread::GetThis()->GetName()));\
                 eptr->getSS()<<str;\
                 logger->error(eptr);}  
 #define ZYX_LOG_ERROR(logger,str) ZYX_LOG_LEVEL_ERROR(logger, zyx::LogLevel::ERROR,str)
@@ -74,8 +75,8 @@
 #define ZYX_LOG_LEVEL_FATAL(logger, level,str) \
         {\
         zyx::LogEvent::ptr eptr(new zyx::LogEvent(logger, level, \
-                        __FILE__, __LINE__, 0, 0,\
-                0, time(0), "root"));\
+                        __FILE__, __LINE__, 0, syscall(SYS_gettid),\
+                zyx::Fiber::GetThis()->getId(), time(0), zyx::Thread::GetThis()->GetName()));\
                 eptr->getSS()<<str;\
                 logger->error(eptr);}  
 #define ZYX_LOG_FATAL(logger,str) ZYX_LOG_LEVEL_FATAL(logger, zyx::LogLevel::FATAL,str)
@@ -136,6 +137,7 @@ public:
     uint32_t getFiberId() const { return m_fiberId; }
     uint64_t getTime() const { return m_time; }
     const std::string& getThreadName() const { return m_threadName; }
+    const std::string& getFiberName() const { return m_FiberName; }
     std::string getContent() const { return m_ss.str(); }
     std::stringstream& getSS() { return m_ss; }
 
@@ -154,6 +156,8 @@ private:
     uint64_t m_time = 0;
     /// 线程名称
     std::string m_threadName;
+    /// 协程名称
+    std::string m_FiberName;
     /// 日志内容流(配合stringstream& getSS()用”<<”将自己要打印的错误信息传入)
     std::stringstream m_ss;
     /// 日志器
@@ -166,7 +170,7 @@ class LogFormatter
 {
 public:
     typedef std::shared_ptr<LogFormatter> ptr;
-    LogFormatter(std::string formate="%D %t-%N %m%n");
+    LogFormatter(std::string formate="%D %t-%N %F %m%n");//时间 线程id-线程名称 协程id  自定义信息
     std::ostream& format(std::ostream& ofs, std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event);
     //将模板格式进行解析，解析成FormatItem放入vector<FormatItem::ptr>中用于输出
      void init(); 
